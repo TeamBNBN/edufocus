@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +30,6 @@ public class UserController {
 
     @PostMapping("/join")
     public ResponseEntity<String> join(@RequestBody User user) throws Exception {
-
-
         userService.join(user);
         return ResponseEntity.ok("User registered successfully");
     }
@@ -56,9 +55,16 @@ public class UserController {
     @Operation(summary = "로그인", description = "아이디와 비밀번호를 이용하여 로그인 처리.")
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
-            @RequestBody @Parameter(description = "로그인 시 필요한 회원정보(아이디, 비밀번호).", required = true) User user,   HttpServletResponse response) {
+            @RequestBody @Parameter(description = "로그인 시 필요한 회원정보(아이디, 비밀번호).", required = true) User user, HttpServletRequest request, HttpServletResponse response) {
+        String token = request.getHeader("Authorization");
+
+        if(jwtUtil.checkToken(token)){
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         Map<String, Object> resultMap = new HashMap<>();
         HttpStatus status = HttpStatus.ACCEPTED;
+
         try {
             User loginUser = userService.login(user);
             if (loginUser != null) {

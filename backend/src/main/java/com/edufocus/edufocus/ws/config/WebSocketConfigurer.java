@@ -28,7 +28,9 @@ public class WebSocketConfigurer implements WebSocketMessageBrokerConfigurer {
                 .setVirtualHost("/")
                 .setRelayPort(61613)
                 .setClientLogin(rabbitMQProperties.getUsername())
-                .setClientPasscode(rabbitMQProperties.getPassword());
+                .setClientPasscode(rabbitMQProperties.getPassword())
+                .setSystemLogin(rabbitMQProperties.getUsername())
+                .setSystemPasscode(rabbitMQProperties.getPassword());
     }
 
     @Override
