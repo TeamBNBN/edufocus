@@ -26,5 +26,5 @@ public class Registration {
     private Lecture lecture;
 
     @Enumerated(EnumType.STRING)
-    private RegistrationStatus status ;
+    private RegistrationStatus status;
 }

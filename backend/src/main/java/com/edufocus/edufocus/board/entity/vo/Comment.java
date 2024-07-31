@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Builder
@@ -26,10 +26,10 @@ public class Comment {
     private String content;
 
     @Column
-    private LocalTime createdAt;
+    private LocalDateTime createdAt;
 
     @Column
-    private LocalTime modifiedAt;
+    private LocalDateTime modifiedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

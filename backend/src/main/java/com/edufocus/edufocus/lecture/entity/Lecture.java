@@ -15,7 +15,8 @@ import java.util.Date;
 @AllArgsConstructor
 public class Lecture {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
 
@@ -29,6 +30,9 @@ public class Lecture {
     @Lob
     private String description;
 
+    @Lob
+    private String plan;
+
     @Column
     private String image;
 
@@ -40,10 +44,10 @@ public class Lecture {
     @Temporal(TemporalType.DATE)
     private Date endDate;
 
-    @Lob
-    private String plan;
-
     @Column
+    private String time;
+
+    @Column(columnDefinition = "boolean default false")
     private boolean online;
 
 }

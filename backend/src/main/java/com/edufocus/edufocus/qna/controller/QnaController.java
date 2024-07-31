@@ -106,9 +106,9 @@ public class QnaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Qna> getQna(@PathVariable Long id) {
+    public ResponseEntity<QnaResponseDto> getQna(@PathVariable Long id) {
         try{
-           Qna findQna= qnaService.getQna(id);
+            QnaResponseDto findQna= qnaService.getQna(id);
             return new ResponseEntity<>(findQna, HttpStatus.ACCEPTED);
 
         } catch (SQLException e) {

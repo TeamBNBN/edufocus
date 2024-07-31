@@ -8,8 +8,11 @@ import com.edufocus.edufocus.user.model.entity.User;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -18,6 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class Board {
 
@@ -37,11 +41,11 @@ public class Board {
     @Column(nullable = true)
     private int viewCount;
 
-    @CreationTimestamp
-    LocalTime createdAt;
+    @CreatedDate
+    LocalDateTime createdAt;
 
-    @CreationTimestamp
-    LocalTime modifiedAt;
+    @LastModifiedDate
+    LocalDateTime modifiedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -60,6 +64,7 @@ public class Board {
                 .id(id)
                 .title(title)
                 .name(user.getUserId())
+                .createdAt(createdAt)
                 .build();
     }
 

@@ -19,7 +19,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/board")
-@CrossOrigin("*")
 public class BoardController {
 
     private final JWTUtil jwtUtil;

@@ -11,11 +11,14 @@ import com.edufocus.edufocus.user.model.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 @Builder
 @Service
@@ -30,18 +33,34 @@ public class LectureServiceImpl implements LectureService {
     private final RegistrationRepository registrationRepository;
 
     @Override
-    public void createLecture(long userId, LectureCreateRequest lectureCreateRequest) {
+    public void createLecture(long userId, LectureCreateRequest lectureCreateRequest, MultipartFile image) throws IOException {
         User user = userRepository.findById(userId).get();
 
         Lecture lecture = new Lecture().builder()
                 .user(user)
                 .title(lectureCreateRequest.getTitle())
                 .description(lectureCreateRequest.getDescription())
-                .image(lectureCreateRequest.getImage())
+                .plan(lectureCreateRequest.getPlan())
                 .startDate(lectureCreateRequest.getStartDate())
                 .endDate(lectureCreateRequest.getEndDate())
-                .plan(lectureCreateRequest.getPlan())
+                .time(lectureCreateRequest.getTime())
                 .build();
+
+        if (image != null && !image.isEmpty()) {
+            String uid = UUID.randomUUID().toString();
+
+            String currentPath = "backend/src/main/resources/images/";
+            File checkPathFile = new File(currentPath);
+            if (!checkPathFile.exists()) {
+                checkPathFile.mkdirs();
+            }
+
+            File savingImage = new File(currentPath + uid + "_" + image.getOriginalFilename());
+            image.transferTo(savingImage.toPath());
+            String savePath = savingImage.toPath().toString();
+
+            lecture.setImage(savePath);
+        }
 
         lectureRepository.save(lecture);
     }
@@ -60,8 +79,8 @@ public class LectureServiceImpl implements LectureService {
         if (lectureCreateRequest.getDescription() != null) {
             lecture.setDescription(lectureCreateRequest.getDescription());
         }
-        if (lectureCreateRequest.getImage() != null) {
-            lecture.setImage(lectureCreateRequest.getImage());
+        if (lectureCreateRequest.getPlan() != null) {
+            lecture.setPlan(lectureCreateRequest.getPlan());
         }
         if (lectureCreateRequest.getStartDate() != null) {
             lecture.setStartDate(lectureCreateRequest.getStartDate());
@@ -69,8 +88,8 @@ public class LectureServiceImpl implements LectureService {
         if (lectureCreateRequest.getEndDate() != null) {
             lecture.setEndDate(lectureCreateRequest.getEndDate());
         }
-        if (lectureCreateRequest.getPlan() != null) {
-            lecture.setPlan(lectureCreateRequest.getPlan());
+        if (lectureCreateRequest.getTime() != null) {
+            lecture.setTime(lectureCreateRequest.getTime());
         }
 
         lectureRepository.save(lecture);
@@ -114,11 +133,9 @@ public class LectureServiceImpl implements LectureService {
     @Override
     public LectureDetailResponse findLectureById(Long userId, long lectureId) {
         Optional<Lecture> lecture = lectureRepository.findById(lectureId);
-
         if (lecture.isEmpty()) {
             return null;
         }
-        lecture = Optional.of(lecture.get());
 
         String userStatus;
         if (userId == null) {
@@ -149,10 +166,11 @@ public class LectureServiceImpl implements LectureService {
                 .id(lecture.get().getId())
                 .title(lecture.get().getTitle())
                 .description(lecture.get().getDescription())
+                .plan(lecture.get().getPlan())
                 .image(lecture.get().getImage())
                 .startDate(lecture.get().getStartDate())
                 .endDate(lecture.get().getEndDate())
-                .plan(lecture.get().getPlan())
+                .time(lecture.get().getTime())
                 .online(lecture.get().isOnline())
                 .teacherName(lecture.get().getUser().getName())
                 .status(userStatus)
@@ -198,4 +216,41 @@ public class LectureServiceImpl implements LectureService {
     public Lecture findLectureByTitle(String title) {
         return lectureRepository.findByTitle(title);
     }
+
+    @Override
+    public void changeState(Long id) {
+
+        Optional<Lecture> lecture = lectureRepository.findById(id);
+
+        Lecture l;
+        if (lecture.isPresent()) {
+            l = lecture.get();
+
+            System.out.println(l.isOnline());
+            l.setOnline(true);
+            System.out.println(l.isOnline());
+
+
+        } else {
+
+            throw new RuntimeException("Lecture not found with id: " + id);
+        }
+        lectureRepository.save(l);
+    }
+
+    @Override
+    public boolean getState(Long lectureId) {
+
+        Lecture lecture= lectureRepository.findById(lectureId).orElse(null);
+        return lecture.isOnline();
+
+    }
+
+    @Override
+    public boolean checkTeacher(Long userId, Long lectureId) {
+        Optional<Lecture> lecture = lectureRepository.findById(lectureId);
+
+        return lecture.isPresent() && lecture.get().getUser().getId() == userId;
+    }
+
 }

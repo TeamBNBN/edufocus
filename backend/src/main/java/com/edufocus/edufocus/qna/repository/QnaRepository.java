@@ -13,7 +13,6 @@ import java.util.List;
 @Repository
 public interface QnaRepository extends JpaRepository<Qna, Long> {
 
-
     List<Qna> findByLectureId(Long lecturerId);
     Page<Qna> findByLectureId(Long lectureId, Pageable pageable);
 }

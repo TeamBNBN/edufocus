@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -23,37 +25,31 @@ public class Quiz {
     private QuizSet quizSet;
 
     @Column
-    private String title;
-
-    @Column
-    private String description;
-
-    @Column
-    private String answer;
-
-    @Column (name = "is_single")
-    private boolean isSingle;
+    private String question;
 
     @Column
     private String image;
 
     @Column
-    private String choice1;
+    private String answer;
 
-    @Column
-    private String choice2;
-
-    @Column
-    private String choice3;
-
-    @Column
-    private String choice4;
+    @OneToMany(mappedBy = "quiz", orphanRemoval = true, cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<Choice> choices;
 
     public void setQuizSet(QuizSet quizSet) {
         this.quizSet = quizSet;
 
         if (!quizSet.getQuizzes().contains(this)) {
             quizSet.getQuizzes().remove(this);
+        }
+    }
+
+    public void addChoice(Choice choice) {
+        this.choices.add(choice);
+
+        if (choice.getQuiz() != this) {
+            choice.setQuiz(this);
         }
     }
 }

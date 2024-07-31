@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -17,6 +17,6 @@ public class ResponseBoardDetailDto {
     private String title;
     private String content;
     private int viewCount;
-    private LocalTime createdAt;
-    private LocalTime modifiedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime modifiedAt;
 }

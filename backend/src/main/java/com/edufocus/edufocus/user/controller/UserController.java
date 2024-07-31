@@ -1,6 +1,10 @@
 package com.edufocus.edufocus.user.controller;
 
+import com.edufocus.edufocus.user.model.entity.InfoDto;
+import com.edufocus.edufocus.user.model.entity.PasswordDto;
 import com.edufocus.edufocus.user.model.entity.User;
+import com.edufocus.edufocus.user.model.exception.ExpriedTokenException;
+import com.edufocus.edufocus.user.model.exception.UnAuthorizedException;
 import com.edufocus.edufocus.user.model.service.UserService;
 import com.edufocus.edufocus.user.util.JWTUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,18 +44,36 @@ public class UserController {
         return ResponseEntity.ok("임시 비밀번호가 이메일로 전송되었습니다.");
 
     }
-//
-//    @PostMapping("/login")
-//    public ResponseEntity<User> login(@RequestBody User user) {
-//        try {
-//            User loggedInUser = userService.login(user);
-//            return ResponseEntity.ok(loggedInUser);
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
- //   }
 
+    @PutMapping("/updateinfo")
+    public ResponseEntity<String> updateUserInfo(
+
+            @RequestBody InfoDto infoDto, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            Long userId = Long.parseLong(jwtUtil.getUserId(token));
+            userService.changeuInfo(infoDto, userId);
+            return ResponseEntity.ok("User info updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // 비밀번호 변경
+    @PutMapping("/updatepassword")
+    public ResponseEntity<String> updatePassword(
+
+            @RequestBody PasswordDto passwordDto, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            Long userId = Long.parseLong(jwtUtil.getUserId(token));
+
+            userService.changePassword(passwordDto, userId);
+            return ResponseEntity.ok("Password changed successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     @Operation(summary = "로그인", description = "아이디와 비밀번호를 이용하여 로그인 처리.")
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
@@ -68,27 +90,36 @@ public class UserController {
         try {
             User loginUser = userService.login(user);
             if (loginUser != null) {
+
+                String name = loginUser.getName();
+                resultMap.put("name",name);
                 String accessToken = jwtUtil.createAccessToken(String.valueOf(loginUser.getId()));
                 String refreshToken = jwtUtil.createRefreshToken(String.valueOf(loginUser.getId()));
 
-                // 발급받은 refresh token 을 DB에 저장.
+
                 userService.saveRefreshToken(loginUser.getId(), refreshToken);
 
-                // JSON 으로 token 전달.
-                System.out.println(accessToken);
-                resultMap.put("access-token", accessToken);
-              //  resultMap.put("refresh-token", refreshToken);
 
-                // 쿠키 저장
+
+                resultMap.put("role",loginUser.getRole());
+                resultMap.put("access-token", accessToken);
+
+
+
                 Cookie refreshCookie = new Cookie("refresh-token", refreshToken);
                 refreshCookie.setPath("/");
                 refreshCookie.setHttpOnly(true);
-                refreshCookie.setSecure(true); // HTTPS에서만 전송되도록 설정
-                // refreshCookie.setSameSite(Cookie.SameSite.NONE); // Cross-Origin 요청에 대해 모두 전송
+               refreshCookie.setSecure(true); // HTTPS에서만 전송되도록 설정
+                //r/efreshCookie.setSameSite(Cookie.SameSite.NONE); // Cross-Origin 요청에 대해 모두 전송
+                //refreshCookie.setSameSite("None"); // Cross-Origin 요청에 대해 모두 전송
 
+                String cookieHeader = String.format("refresh-token=%s; Path=/; HttpOnly; Secure; SameSite=None", refreshToken);
+                response.setHeader("Set-Cookie", cookieHeader);
+
+              //  refreshCookie.setSameSite("None"); // Cross-Origin 요청에 대해 모두 전송
                 response.addCookie(refreshCookie);
 
-                // 쿠키저장
+
                 status = HttpStatus.CREATED;
             } else {
                 resultMap.put("message", "아이디 또는 패스워드를 확인해 주세요.");
@@ -106,12 +137,9 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getInfo(
             @PathVariable("userId") @Parameter(description = "인증할 회원의 아이디.", required = true) Long userId,
             HttpServletRequest request) {
-		//logger.debug("userId : {} ", userId);
         String id = String.valueOf(userId);
 
-        System.out.println("!>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(id);
-        System.out.println(id.getClass().getName());
+
         Map<String, Object> resultMap = new HashMap<>();
         HttpStatus status = HttpStatus.ACCEPTED;
         if (jwtUtil.checkToken(request.getHeader("Authorization"))) {
@@ -245,7 +273,15 @@ public class UserController {
     }
 
 
+    @ExceptionHandler(ExpriedTokenException.class)
+    public ResponseEntity<?> handleExpiredTokenException(){
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 
+    }
+    @ExceptionHandler(UnAuthorizedException.class)
+    public ResponseEntity<?> handleUnauthorizedException(){
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
 
 
 

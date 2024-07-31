@@ -15,6 +15,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("에듀포커스 API")
                         .description("")
+
                         .version("1.0.0"));
     }
     }

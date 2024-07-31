@@ -21,13 +21,15 @@ public class LectureDetailResponse {
 
     private String description;
 
+    private String plan;
+
     private String image;
 
     private Date startDate;
 
     private Date endDate;
 
-    private String plan;
+    private String time;
 
     private boolean online;
 

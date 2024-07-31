@@ -1,5 +1,6 @@
 package com.edufocus.edufocus.registration.controller;
 
+import com.edufocus.edufocus.lecture.service.LectureService;
 import com.edufocus.edufocus.registration.service.RegistrationService;
 import com.edufocus.edufocus.user.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RegistrationController {
 
-    private final RegistrationService registrationServiceImpl;
+    private final RegistrationService registrationService;
+
+    private final LectureService lectureService;
 
     private final JWTUtil jwtUtil;
 
@@ -25,12 +28,10 @@ public class RegistrationController {
         Long userId = Long.parseLong(jwtUtil.getUserId(accessToken));
         Long lectureId = map.get("lectureId");
 
-        if (!registrationServiceImpl.createRegistration(userId, lectureId)) {
-            String msg = new String("Duplicated Registration");
-            return new ResponseEntity<>(msg, HttpStatus.CONFLICT);
+        if (!registrationService.createRegistration(userId, lectureId)) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
 
-        String msg = new String("registration successful");
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -38,12 +39,10 @@ public class RegistrationController {
     public ResponseEntity<?> acceptRigistration(@RequestHeader("Authorization") String accessToken, @PathVariable long registrationId) {
         Long userId = Long.parseLong(jwtUtil.getUserId(accessToken));
 
-        if (!registrationServiceImpl.acceptRegistration(userId, registrationId)) {
-            String msg = new String("Not Acceptable");
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if (!registrationService.acceptRegistration(userId, registrationId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        String msg = new String("registration accepted");
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -51,12 +50,22 @@ public class RegistrationController {
     public ResponseEntity<?> deleteRigistration(@RequestHeader("Authorization") String accessToken, @PathVariable long registrationId) {
         Long userId = Long.parseLong(jwtUtil.getUserId(accessToken));
 
-        if (!registrationServiceImpl.deleteRegistration(userId, registrationId)) {
-            String msg = new String("Not Acceptable");
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if (!registrationService.deleteRegistration(userId, registrationId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{lectureId}")
+    public ResponseEntity<?> getRegistrations(@RequestHeader("Authorization") String accessToken, @PathVariable long lectureId) {
+        Long userId = Long.parseLong(jwtUtil.getUserId(accessToken));
+
+        if (!lectureService.checkTeacher(userId, lectureId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        return new ResponseEntity<>(registrationService.searchRegistrations(lectureId), HttpStatus.OK);
     }
 
 }

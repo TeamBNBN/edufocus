@@ -14,6 +14,7 @@ import java.util.Date;
 public class QnaResponseDto {
 
 
+    private Long id;
     private String title;
     private String username;
     private String content;
@@ -22,7 +23,7 @@ public class QnaResponseDto {
     public static QnaResponseDto toEntity(Qna qna)
     {
         return new QnaResponseDto(
-
+                qna.getId(),
                 qna.getTitle(),
                 qna.getUser().getName(),
                 qna.getContent(),

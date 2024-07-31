@@ -1,9 +1,7 @@
 package com.edufocus.edufocus.user.model.service;
 
 
-import com.edufocus.edufocus.user.model.entity.MailDto;
-import com.edufocus.edufocus.user.model.entity.MemberChangeDto;
-import com.edufocus.edufocus.user.model.entity.User;
+import com.edufocus.edufocus.user.model.entity.*;
 import com.edufocus.edufocus.user.model.exception.UserException;
 import com.edufocus.edufocus.user.model.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -21,61 +19,43 @@ import java.util.Optional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
 
     private final UserRepository userRepository;
-    private final JavaMailSender mailSender;
-
+    private final JavaMailSender mailSender;//private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
     public void join(User user)
     {
+        System.out.println(user.getRole().getClass());
+        user.setPassword(PasswordUtils.hashPassword(user.getPassword()));
+
         userRepository.save(user);
     }
 
 
-    public User login(User user) throws SQLException
-    {
+    public User login(User user) throws SQLException {
         Optional<User> findUser = userRepository.findByUserId(user.getUserId());
 
-
-        if(findUser.isEmpty())
-        {
-            throw new UserException("없는 유저");
-
+        if (findUser.isEmpty()) {
+            throw new UserException("User does not exist");
         }
 
-
-        if(findUser.isPresent())
-        {
-
-            User find = findUser.get();
-            if(find.getPassword().equals(user.getPassword()))
-            {
-                return find;
-            }
-            else{
-                throw new UserException("비밀번호 틀림");
-
-            }
-        }
-        else{
-            throw new UserException("없는 유저");
-
-
+        User find = findUser.get();
+        if (PasswordUtils.checkPassword(user.getPassword(), find.getPassword())) {
+            return find;
+        } else {
+            throw new UserException("Incorrect password");
         }
 
     }
 
     @Override
-    public User userInfo(Long id)
-    {
-        try{
+    public User userInfo(Long id) {
+        try {
             return userRepository.findById(id).get();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new UserException(e.getMessage());
         }
 
@@ -85,16 +65,15 @@ public class UserServiceImpl implements UserService{
     public void sendEamail(User user) throws Exception {
         MailDto mailDto = createMailAndChargePassword(user);
 
-        System.out.println("이메일 전송 완료");
-        SimpleMailMessage message = new SimpleMailMessage();
 
+        SimpleMailMessage message = new SimpleMailMessage();
 
 
         message.setTo(mailDto.getAddress());
         message.setFrom("passfinder111@gmail.com");
         message.setSubject(mailDto.getTitle());
         message.setText(mailDto.getMessage());
-        System.out.println("!!!!!!!!!!!!!!!!!!"+ message);
+
 
         mailSender.send(message);
 
@@ -105,16 +84,14 @@ public class UserServiceImpl implements UserService{
         String str = getTempPassword();
         MailDto dto = new MailDto();
         dto.setAddress(user.getEmail());
-        dto.setTitle(user.getUserId()+"님의 임시비밀번호 안내 이메일 입니다.");
-        dto.setMessage("안녕하세요. EduFoucs 입니다.  "+ "\n"+ "임시비밀번호 안내 관련 메일 입니다." + "\n[" + user.getName() + "]" + "님의 임시 비밀번호는 "
+        dto.setTitle(user.getUserId() + "님의 임시비밀번호 안내 이메일 입니다.");
+        dto.setMessage("안녕하세요. EduFoucs 입니다.  " + "\n" + "임시비밀번호 안내 관련 메일 입니다." + "\n[" + user.getName() + "]" + "님의 임시 비밀번호는 "
                 + str + " 입니다.");
 
         System.out.println(dto);
 
-        MemberChangeDto memberChangeDto = new MemberChangeDto(user.getId(),str);
-        System.out.println(memberChangeDto);
-        userRepository.updatePassword(memberChangeDto.getId(),memberChangeDto.getPassword());
-        System.out.println();
+        MemberChangeDto memberChangeDto = new MemberChangeDto(user.getId(), str);
+        userRepository.updatePassword(memberChangeDto.getId(), memberChangeDto.getPassword());
 
         return dto;
     }
@@ -125,16 +102,63 @@ public class UserServiceImpl implements UserService{
         User user = userRepository.findById(id).orElse(null);
 
 
-        if(user == null)
-        {
-            System.out.println("불가");
-            throw new RuntimeException("유효하지 않은 아이디입니다. 다시 입력하세요");
+        if (user == null) {
+            throw new UserException("유효하지 않은 아이디입니다. 다시 입력하세요");
 
-        }
-        else {
+        } else {
 
             sendEamail(user);
         }
+    }
+
+    @Override
+    public String getUserName(Long id) throws Exception {
+
+        return userRepository.findById(id).get().getName();
+    }
+
+
+    @Override
+    public void changeuInfo(InfoDto infoDto, Long id) throws Exception {
+
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            throw new Exception("User not found");
+        }
+
+        if (infoDto.getName() != null)
+        {
+            user.setName(infoDto.getName());
+        }
+
+        if(infoDto.getEmail()!=null)
+        {
+            user.setEmail(infoDto.getEmail());
+        }
+        userRepository.save(user);
+}
+
+
+    @Override
+    public void changePassword(PasswordDto passwordDto, Long id) throws Exception {
+        User user = userRepository.findById(id).orElse(null);
+
+        if (user == null) {
+            throw new Exception("User not found");
+        }
+
+        if (!PasswordUtils.checkPassword(passwordDto.getCurrentPassword(), user.getPassword())) {
+            throw new Exception("Current password is incorrect");
+        } else {
+            if (!passwordDto.getNewPassword().equals(passwordDto.getNewPasswordCheck())) {
+                throw new Exception("New password confirmation does not match");
+            }
+        }
+
+        // Hash the new password before saving
+        user.setPassword(PasswordUtils.hashPassword(passwordDto.getNewPassword()));
+        userRepository.save(user);
     }
     public String getTempPassword() {
         char[] charSet = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',

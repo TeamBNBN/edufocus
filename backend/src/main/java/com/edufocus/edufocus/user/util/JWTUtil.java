@@ -4,6 +4,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
+import com.edufocus.edufocus.user.model.exception.ExpriedTokenException;
+import com.edufocus.edufocus.user.model.exception.InvalidTokenException;
 import com.edufocus.edufocus.user.model.exception.UnAuthorizedException;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,19 +54,27 @@ public class JWTUtil {
 
     public boolean checkToken(String token) {
         try {
-            Jws<Claims> claims = Jwts.parserBuilder()
-                    .setSigningKey(generateKey())
-                    .build()
-                    .parseClaimsJws(token);
-            log.debug("claims: {}", claims);
-            return true;
-        } catch (MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | SignatureException | ExpiredJwtException e) {
-            log.error("Token validation error: {}", e.getMessage());
-            return false;
-        } catch (Exception e) {
-            System.out.println(token);
-            log.error("Unexpected error while validating token: {}", e.getMessage());
-            return false;
+                Jws<Claims> claims = Jwts.parserBuilder()
+                        .setSigningKey(generateKey())
+                        .build()
+                        .parseClaimsJws(token);
+                log.debug("claims: {}", claims);
+                return true;
+            } catch (MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | SignatureException e) {
+                log.error("Token validation error: {}", e.getMessage());
+
+                return false;
+            }
+        catch ( ExpiredJwtException e)
+            {
+                throw new ExpriedTokenException();
+
+            }
+        catch (Exception e) {
+                System.out.println(token);
+                System.out.println(e.getMessage());
+                log.error("Unexpected error while validating token: {}", e.getMessage());
+                return false;
         }
     }
 
@@ -77,9 +87,15 @@ public class JWTUtil {
             Map<String, Object> value = claims.getBody();
             log.info("value : {}", value);
             return (String) value.get("id");
-        } catch (Exception e) {
+        }catch ( ExpiredJwtException e)
+        {
+            System.out.println("expired token");
+            throw new ExpriedTokenException();
+
+        }
+        catch (Exception e) {
             log.error("Failed to get user ID from token: {}", e.getMessage());
-            throw new UnAuthorizedException();
+            throw new InvalidTokenException();
         }
     }
 }

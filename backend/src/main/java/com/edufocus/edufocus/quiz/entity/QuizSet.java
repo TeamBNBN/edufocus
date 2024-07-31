@@ -27,12 +27,9 @@ public class QuizSet {
     @Column
     private String title;
 
-    @Column
-    private String image;
-
-    @OneToMany(mappedBy = "quizSet")
+    @OneToMany(mappedBy = "quizSet", orphanRemoval = true)
     @JsonManagedReference
-    private List<Quiz> quizzes =  new ArrayList<Quiz>();
+    private List<Quiz> quizzes = new ArrayList<Quiz>();
 
     public void addQuiz(Quiz quiz) {
         this.quizzes.add(quiz);

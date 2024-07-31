@@ -66,8 +66,7 @@ public class QnaServiceImpl implements QnaService{
         findQna.setTitle(qnaRequestDto.getTitle());
         findQna.setContent(qnaRequestDto.getContent());
 
-            qnaRepository.save(findQna);
-
+        qnaRepository.save(findQna);
 
             return QnaResponseDto.toEntity(findQna);
 
@@ -80,8 +79,22 @@ qnaRepository.deleteById(id);
     }
 
     @Override
-    public Qna getQna(Long id) {
-        return null;
+    public QnaResponseDto getQna(Long id) {
+        Optional<Qna> qna;
+        try {
+
+            qna= qnaRepository.findById(id);
+
+
+        } catch (Exception e) {
+
+            throw new RuntimeException("Qna 없음 " + id, e);
+        }
+
+
+
+            return QnaResponseDto.toEntity(qna.get());
+
     }
 
     @Override

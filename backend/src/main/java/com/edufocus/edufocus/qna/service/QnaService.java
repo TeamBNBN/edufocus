@@ -16,7 +16,7 @@ public interface QnaService {
     QnaResponseDto createQna(Long id, QnaRequestDto qnaRequestDto, Long lecture_id) throws SQLException;
     QnaResponseDto updateQna(Long id,QnaRequestDto qnaRequestDto) throws SQLException;
     void deleteQna(Long id) throws SQLException;
-    Qna getQna(Long id) throws SQLException;
+    QnaResponseDto getQna(Long id) throws SQLException;
 
     List<QnaResponseDto> getAllQnasByLecture(Long lectureId,int pageNumber) throws SQLException;
     QnaResponseDto createAnswer(Long id,QnaRequestDto qnaRequestDto) throws SQLException;
